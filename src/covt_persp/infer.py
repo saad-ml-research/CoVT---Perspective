@@ -104,12 +104,18 @@ def main() -> None:
     if args.out.exists():
         done = {json.loads(l)["id"] for l in args.out.read_text().splitlines() if l.strip()}
     todo = [r for r in rows if r["id"] not in done]
+    data_root = args.data.parent
+    bad = [r["id"] for r in todo
+           if not r.get("images") or not all((Path(p) if Path(p).is_absolute() else data_root / p).exists()
+                                              for p in r["images"])]
+    if bad:
+        raise SystemExit(f"{len(bad)} rows have no image or a missing image file (e.g. {bad[:3]}); "
+                         "re-run the data prep script")
     print(f"{len(rows)} rows, {len(done)} done, {len(todo)} to run")
     if not todo:
         return
 
     model, processor = load_model(args.model)
-    data_root = args.data.parent
     with args.out.open("a") as f:
         for r in tqdm(todo):
             images = [p if Path(p).is_absolute() else str(data_root / p) for p in r["images"]]

@@ -121,9 +121,11 @@ def convert(root: Path, out: Path) -> None:
         for i, r in enumerate(records_from(jpath)):
             task = TASK_CODES.get(task_dir) or TASK_CODES.get(str(first(r, "task", "category"))) \
                 or str(first(r, "task", "category") or "unknown")
-            imgs = first(r, "images", "image_paths", "image", "image_path", "img", "file_name")
+            imgs = first(r, "images", "image_paths", "image", "image_path", "img", "file_name", "filename")
             imgs = imgs if isinstance(imgs, list) else [imgs] if imgs else []
             resolved = []
+            if not imgs:
+                problems["no_image_field"] += 1
             for im in imgs:
                 cands = [jpath.parent / im, root / im, root / "root_v3" / im]
                 hit = next((c for c in cands if c.exists()), None)
@@ -152,6 +154,10 @@ def convert(root: Path, out: Path) -> None:
     print(f"wrote {len(rows)} rows to {out}")
     print("per task:", dict(Counter(r["task"] for r in rows)))
     print("problems:", dict(problems) or "none")
+    n_img = sum(bool(r["images"]) for r in rows)
+    print(f"rows with an image: {n_img}/{len(rows)}")
+    if problems.get("no_image_field") or problems.get("missing_image"):
+        raise SystemExit("!! some rows have no resolvable image; fix before running inference")
 
 
 def main() -> None:
