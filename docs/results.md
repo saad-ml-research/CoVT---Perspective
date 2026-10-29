@@ -2,18 +2,51 @@
 
 All runs on RunPod L40S 48 GB, transformers 4.50.1, torch 2.5, VLMEvalKit from
 Wakals/CoVT @ c3497a3, exact-match answer extraction (no LLM judge).
+Detailed tables come from `scripts/cvbench_breakdown.py` (bootstrap 95% CIs).
 
 ## Step 0: CV-Bench reproduction (2026-10-29)
 
-CV-Bench overall = mean of the 2D and 3D accuracies (Cambrian-1 convention).
+### Summary
 
-| Model | 2D: ADE20K | 2D: COCO | 2D overall | 3D: Depth | 3D: Distance | 3D overall | **CV-Bench** | Paper |
-|---|---|---|---|---|---|---|---|---|
-| CoVT-7B-seg_depth_dino | 67.8 | 82.2 | 75.0 | 86.7 | 82.5 | 84.6 | **79.8** | 80.0 |
-| Qwen2.5-VL-7B-Instruct | | | | | | | | 74.5 |
+Official CV-Bench convention (VLMEvalKit / Cambrian-1): 2D accuracy is the mean of the
+ADE20K and COCO accuracies; CV-Bench overall is the mean of 2D and 3D.
 
-Notes:
-- CoVT 3D ran with SDPA attention (flash-attn installed mid-run); 2D ran with flash-attn
-  after an SDPA out-of-memory failure on large images. Depth and Distance match the paper
-  (86.8, 82.5) to within 0.1.
-- Reproduction confirmed: within 0.2 of the paper's 80.0.
+| Model | 2D | 3D | **CV-Bench** | Paper | Count | Depth | Distance |
+|---|---|---|---|---|---|---|---|
+| CoVT-7B-seg_depth_dino | 75.0 | 84.6 | **79.8** | 80.0 | 65.1 (paper 66.2) | 86.7 (paper 86.8) | 82.5 (paper 82.5) |
+| Qwen2.5-VL-7B-Instruct | | | | 74.5 | (paper 65.0) | (paper 72.8) | (paper 75.5) |
+
+Reproduction confirmed: overall within 0.2 of the paper; every subtask within its 95% CI.
+
+Averaging convention matters: pooling all 1,438 2D questions gives 75.9 (not 75.0), and a
+pooled overall of 80.2. Always report the official source-averaged numbers when comparing
+with the paper.
+
+### CoVT-7B-seg_depth_dino: CV-Bench-2D (n = 1,438)
+
+| Split | n | Acc | 95% CI |
+|---|---|---|---|
+| Count | 788 | 65.1 | [61.8, 68.3] |
+| Relation | 650 | 88.9 | [86.5, 91.4] |
+| ADE20K | 633 | 67.8 | [64.3, 71.4] |
+| COCO | 805 | 82.2 | [79.6, 84.8] |
+| Count / ADE20K | 342 | 52.6 | [47.4, 57.9] |
+| Count / COCO | 446 | 74.7 | [70.6, 78.9] |
+| Relation / ADE20K | 291 | 85.6 | [81.4, 89.3] |
+| Relation / COCO | 359 | 91.6 | [88.9, 94.4] |
+
+### CoVT-7B-seg_depth_dino: CV-Bench-3D (n = 1,200, all Omni3D)
+
+| Split | n | Acc | 95% CI |
+|---|---|---|---|
+| Depth | 600 | 86.7 | [84.0, 89.3] |
+| Distance | 600 | 82.5 | [79.5, 85.5] |
+| Overall | 1200 | 84.6 | [82.6, 86.7] |
+
+### Observations
+
+- **Counting is the weak spot**, especially on ADE20K scenes (52.6 vs 74.7 on COCO): cluttered
+  indoor scenes with many small objects. Relations are near ceiling (88.9).
+- **3D is strong** (84.6), consistent with CoVT's depth tokens being its main gain.
+- Run notes: 3D ran with SDPA attention (flash-attn installed mid-run); 2D ran with
+  flash-attn after an SDPA out-of-memory failure on large images.
