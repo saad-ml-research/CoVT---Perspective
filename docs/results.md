@@ -14,7 +14,7 @@ ADE20K and COCO accuracies; CV-Bench overall is the mean of 2D and 3D.
 | Model | 2D | 3D | **CV-Bench** | Paper | Count | Depth | Distance |
 |---|---|---|---|---|---|---|---|
 | CoVT-7B-seg_depth_dino | 75.0 | 84.6 | **79.8** | 80.0 | 65.1 (paper 66.2) | 86.7 (paper 86.8) | 82.5 (paper 82.5) |
-| Qwen2.5-VL-7B-Instruct | | | | 74.5 | (paper 65.0) | (paper 72.8) | (paper 75.5) |
+| Qwen2.5-VL-7B-Instruct | 75.2 | *running* | | 74.5 | (paper 65.0) | (paper 72.8) | (paper 75.5) |
 
 Reproduction confirmed: overall within 0.2 of the paper; every subtask within its 95% CI.
 
@@ -43,10 +43,23 @@ with the paper.
 | Distance | 600 | 82.5 | [79.5, 85.5] |
 | Overall | 1200 | 84.6 | [82.6, 86.7] |
 
+### Qwen2.5-VL-7B-Instruct (baseline): CV-Bench-2D (n = 1,438)
+
+| Split | Acc |
+|---|---|
+| ADE20K | 68.2 |
+| COCO | 82.1 |
+| 2D (source mean) | 75.2 |
+
+Per-task (Count / Relation) split pending `cvbench_breakdown.py`.
+
 ### Observations
 
 - **Counting is the weak spot**, especially on ADE20K scenes (52.6 vs 74.7 on COCO): cluttered
   indoor scenes with many small objects. Relations are near ceiling (88.9).
+- **No 2D gain from CoVT**: baseline 75.2 vs CoVT 75.0 (ADE20K 68.2 vs 67.8, COCO 82.1 vs 82.2),
+  consistent with the paper's small Count gain (65.0 to 66.2). CoVT's CV-Bench gain should
+  therefore come almost entirely from 3D.
 - **3D is strong** (84.6), consistent with CoVT's depth tokens being its main gain.
 - Run notes: 3D ran with SDPA attention (flash-attn installed mid-run); 2D ran with
   flash-attn after an SDPA out-of-memory failure on large images.
