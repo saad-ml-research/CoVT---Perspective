@@ -54,3 +54,11 @@ src/covt_persp/
   score.py     answer extraction, per-task accuracy, bootstrap 95% CIs
 data/       JSONL schema; converted benchmarks (not committed)
 ```
+
+## Data status (Oct 2026)
+
+- **VERIFY:** only the 50-puzzle teaser is public (`jing-bi/verify-teaser`).
+  `python scripts/prepare_verify.py` converts it for smoke tests. The full 600 and the
+  stage-matching evaluation need to come from the authors.
+- **MMPerspective:** not publicly released yet (the GitHub repo has no data).
+  The converter will be written once the release format is known.
