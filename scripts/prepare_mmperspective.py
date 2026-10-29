@@ -26,10 +26,11 @@ TASK_CODES = {
     "perspective_transformation_spotting": "PTS",
     "vanishing_point_counting": "VPC",
     "out_of_view_reasoning": "OVR",
+    "perspective_robustness": "PRB",
 }
 CATEGORY = {"VPP": "perception", "CLP": "perception", "VAP": "perception", "LDP": "perception",
             "PTR": "reasoning", "LRR": "reasoning", "PTS": "reasoning", "VPC": "reasoning",
-            "OVR": "reasoning"}
+            "OVR": "reasoning", "PRB": "robustness"}
 IMG_EXT = {".jpg", ".jpeg", ".png", ".webp", ".bmp"}
 
 

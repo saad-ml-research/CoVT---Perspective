@@ -42,5 +42,10 @@ pip install flash-attn==2.7.4.post1 --no-build-isolation || echo "!! flash-attn 
 # 3. This repo as a package.
 pip install -e "$REPO_DIR"
 
+# 4. Re-pin last: later installs can pull a newer transformers, which removes
+#    classes VLMEvalKit imports (e.g. AutoModelForVision2Seq).
+pip install "transformers==4.50.1" "accelerate==1.3.0"
+python -c "import transformers as t; assert t.__version__=='4.50.1', t.__version__; from transformers import AutoModelForVision2Seq; print('transformers', t.__version__, 'ok')"
+
 python "$REPO_DIR/scripts/check_env.py"
 echo ">>> Setup done. Next: bash setup/download_models.sh"
