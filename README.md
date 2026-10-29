@@ -60,5 +60,6 @@ data/       JSONL schema; converted benchmarks (not committed)
 - **VERIFY:** only the 50-puzzle teaser is public (`jing-bi/verify-teaser`).
   `python scripts/prepare_verify.py` converts it for smoke tests. The full 600 and the
   stage-matching evaluation need to come from the authors.
-- **MMPerspective:** not publicly released yet (the GitHub repo has no data).
-  The converter will be written once the release format is known.
+- **MMPerspective:** on the Hub as `yoloytang/MMPerspective` (images in `root_v3/<task>/`,
+  annotations expected as JSON). Run `python scripts/prepare_mmperspective.py --inspect`
+  first to confirm the layout, then without `--inspect` to write `data/mmperspective.jsonl`.
