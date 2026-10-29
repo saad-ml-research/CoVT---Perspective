@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Install a prebuilt flash-attn 2.7.4.post1 wheel matching this pod's torch / Python /
+# Install a prebuilt flash-attn 2.7.4.post1 wheel matching the installed torch / Python /
 # C++ ABI, instead of compiling from source (slow and often fails).
 # Needed for memory: without it the Qwen2.5-VL vision encoder's SDPA attention OOMs
 # on large images at CoVT's max_pixels setting.
