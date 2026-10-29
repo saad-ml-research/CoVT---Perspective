@@ -8,7 +8,7 @@ import argparse
 import json
 import random
 import re
-from collections import defaultdict
+from collections import Counter, defaultdict
 from pathlib import Path
 
 ANSWER_TAG = re.compile(r"<\s*answer\s*>(.*?)<\s*/\s*answer\s*>", re.I | re.S)
@@ -42,19 +42,38 @@ def bootstrap_ci(correct: list[int], n_boot: int = 2000, seed: int = 0) -> tuple
 
 
 def summarize(path: Path) -> dict:
+    """Per task: accuracy with CI, majority-class baseline (always answering the most
+    common correct letter), and the model's top-prediction share (1.0 = it always
+    gives the same letter, i.e. collapsed onto one option)."""
     rows = [json.loads(l) for l in path.read_text().splitlines() if l.strip()]
-    by_task: dict[str, list[int]] = defaultdict(list)
+    groups: dict[str, list[dict]] = defaultdict(list)
     for r in rows:
-        ok = int(r["pred"] is not None and str(r["pred"]).upper() == str(r["answer"]).strip().upper())
-        by_task[r.get("task") or "all"].append(ok)
+        groups[r.get("task") or "all"].append(r)
         if r.get("task"):
-            by_task["ALL"].append(ok)
+            groups["ALL"].append(r)
     out = {}
-    for task, c in sorted(by_task.items()):
+    for task, rs in sorted(groups.items()):
+        c = [int(r["pred"] is not None and str(r["pred"]).upper() == str(r["answer"]).strip().upper())
+             for r in rs]
         lo, hi = bootstrap_ci(c)
-        out[task] = {"n": len(c), "acc": sum(c) / len(c), "ci95": (lo, hi)}
+        answers = Counter(str(r["answer"]).upper() for r in rs)
+        preds = Counter(str(r["pred"]).upper() for r in rs)
+        top_pred, top_n = preds.most_common(1)[0]
+        out[task] = {
+            "n": len(c), "acc": sum(c) / len(c), "ci95": (lo, hi),
+            "majority": answers.most_common(1)[0][1] / len(rs),
+            "top_pred": top_pred, "top_pred_share": top_n / len(rs),
+        }
     out["_unparsed"] = sum(r["pred"] is None for r in rows)
     return out
+
+
+def agreement(a: Path, b: Path) -> float:
+    """Fraction of shared questions where two runs give the same letter."""
+    pa = {r["id"]: r["pred"] for r in map(json.loads, a.read_text().splitlines()) if r}
+    pb = {r["id"]: r["pred"] for r in map(json.loads, b.read_text().splitlines()) if r}
+    shared = pa.keys() & pb.keys()
+    return sum(pa[i] == pb[i] for i in shared) / max(len(shared), 1)
 
 
 def main() -> None:
@@ -64,9 +83,14 @@ def main() -> None:
     for p in args.files:
         s = summarize(p)
         print(f"\n== {p.name}  (unparsed: {s.pop('_unparsed')})")
+        print(f"  {'task':6s} {'n':>5s}  {'acc':>5s}  {'95% CI':>13s}  {'majority':>8s}  {'top pred':>9s}")
         for task, v in s.items():
             lo, hi = v["ci95"]
-            print(f"  {task:12s} n={v['n']:5d}  acc={100 * v['acc']:5.1f}  [{100 * lo:5.1f}, {100 * hi:5.1f}]")
+            flag = "  <- collapsed" if v["top_pred_share"] >= 0.8 and v["n"] >= 5 else ""
+            print(f"  {task:6s} {v['n']:5d}  {100 * v['acc']:5.1f}  [{100 * lo:4.1f}, {100 * hi:4.1f}]"
+                  f"  {100 * v['majority']:8.1f}  {v['top_pred']:>3s} {100 * v['top_pred_share']:4.0f}%{flag}")
+    if len(args.files) == 2:
+        print(f"\nprediction agreement between the two runs: {100 * agreement(*args.files):.1f}%")
 
 
 if __name__ == "__main__":
