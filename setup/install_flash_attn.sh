@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Install a prebuilt flash-attn 2.7.4.post1 wheel matching this pod's torch / Python /
-# C++ ABI, instead of compiling from source (slow, often fails on RunPod images).
+# C++ ABI, instead of compiling from source (slow and often fails).
 # Needed for memory: without it the Qwen2.5-VL vision encoder's SDPA attention OOMs
 # on large images at CoVT's max_pixels setting.
 set -euo pipefail

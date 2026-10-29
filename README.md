@@ -1,65 +1,24 @@
 # Visual Thought Tokens: Do They Help MLLMs See, Reason, or Both?
 
-A controlled study of text vs. visual-text reasoning in MLLMs, using the released
-[CoVT](https://github.com/Wakals/CoVT) checkpoints on two benchmarks that separate
-seeing from reasoning:
+## Results
 
-- **MMPerspective** (NeurIPS 2025): perspective geometry; perception, reasoning, robustness.
-- **VERIFY** (2025): abstract visual puzzles with human reasoning paths, scored by stage.
+### CV-Bench reproduction
 
-**Part A** evaluates CoVT as released (visual tokens once, before the answer), zero-shot.
-**Part B** trains an interleaved version that emits expert visual tokens before each
-text reasoning step.
+Overall = mean of 2D and 3D accuracy.
 
-## Conditions
+| Model | Count | Relation | 2D | Depth | Distance | 3D | **Overall** | Paper |
+|---|---|---|---|---|---|---|---|---|
+| Qwen2.5-VL-7B-Instruct | 66.0 | 88.2 | 76.0 | 70.8 | 75.3 | 73.1 | **74.5** | 74.5 |
+| CoVT-7B-seg_depth_dino | 65.1 | 88.9 | 75.9 | 86.7 | 82.5 | 84.6 | **80.2** | 80.0 |
+| Δ (CoVT − base) | −0.9 | +0.7 | −0.1 | **+15.9** | **+7.2** | **+11.5** | **+5.7** | +5.5 |
 
-| Condition | Model | Prompt |
-| --- | --- | --- |
-| Direct | Qwen2.5-VL-7B-Instruct | `direct` |
-| Text reasoning | Qwen2.5-VL-7B-Instruct | `text_cot` |
-| Visual thoughts only | CoVT checkpoints | `direct` |
-| Visual + text reasoning | CoVT checkpoints | `text_cot` |
+### CV-Bench by task and image source (accuracy, 95% CI)
 
-## Quick start (RunPod, L40S 48 GB)
-
-```bash
-cd /workspace
-git clone https://github.com/saad-ml-research/CoVT---Perspective.git
-cd CoVT---Perspective
-bash setup/runpod_setup.sh          # deps + pinned upstream CoVT into third_party/
-bash setup/download_models.sh       # CoVT-7B-seg_depth_dino + Qwen2.5-VL-7B (~32 GB)
-bash scripts/repro_cvbench.sh       # Step 0: expect about 80.0 on CV-Bench
-bash scripts/repro_cvbench.sh Qwen2.5-VL-7B-Instruct   # baseline, expect about 74.5
-```
-
-Then, once benchmarks are converted to `data/*.jsonl` (see `data/SCHEMA.md`):
-
-```bash
-python -m covt_persp.infer --model Wakals/CoVT-7B-seg_depth_dino \
-    --data data/mmperspective.jsonl --condition text_cot --limit 20 \
-    --out /workspace/results/mmp/covt_sdd__text_cot.jsonl
-python -m covt_persp.score /workspace/results/mmp/*.jsonl
-```
-
-All results and caches live on `/workspace` so they survive pod restarts.
-
-## Layout
-
-```
-setup/      RunPod setup and model downloads
-scripts/    environment check, CV-Bench reproduction, benchmark converters
-src/covt_persp/
-  prompts.py   reasoning conditions
-  infer.py     resumable runner (keeps raw output incl. visual-token placeholders)
-  score.py     answer extraction, per-task accuracy, bootstrap 95% CIs
-data/       JSONL schema; converted benchmarks (not committed)
-```
-
-## Data status (Oct 2026)
-
-- **VERIFY:** only the 50-puzzle teaser is public (`jing-bi/verify-teaser`).
-  `python scripts/prepare_verify.py` converts it for smoke tests. The full 600 and the
-  stage-matching evaluation need to come from the authors.
-- **MMPerspective:** on the Hub as `yoloytang/MMPerspective` (images in `root_v3/<task>/`,
-  annotations expected as JSON). Run `python scripts/prepare_mmperspective.py --inspect`
-  first to confirm the layout, then without `--inspect` to write `data/mmperspective.jsonl`.
+| Split | n | Qwen2.5-VL-7B | CoVT-7B-seg_depth_dino |
+|---|---|---|---|
+| Count / ADE20K | 342 | 52.9 [47.7, 57.9] | 52.6 [47.4, 57.9] |
+| Count / COCO | 446 | 76.0 [72.0, 80.0] | 74.7 [70.6, 78.9] |
+| Relation / ADE20K | 291 | 86.3 [82.1, 90.4] | 85.6 [81.4, 89.3] |
+| Relation / COCO | 359 | 89.7 [86.6, 92.8] | 91.6 [88.9, 94.4] |
+| Depth / Omni3D | 600 | 70.8 [67.3, 74.5] | 86.7 [84.0, 89.3] |
+| Distance / Omni3D | 600 | 75.3 [72.0, 78.7] | 82.5 [79.5, 85.5] |

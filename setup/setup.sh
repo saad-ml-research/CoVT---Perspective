@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
-# One-time setup on a RunPod pod. Everything heavy lives on the /workspace volume
-# so it survives pod restarts.
+# One-time environment setup. Caches go under $WS (default /workspace).
 #
-#   cd /workspace/CoVT---Perspective && bash setup/runpod_setup.sh
+#   bash setup/setup.sh
 set -euo pipefail
 
 WS=${WS:-/workspace}
