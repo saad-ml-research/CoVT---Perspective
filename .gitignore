@@ -1,0 +1,10 @@
+__pycache__/
+*.egg-info/
+third_party/
+results/
+outputs/
+data/raw/
+data/images/
+*.jsonl
+!data/samples/*.jsonl
+.env

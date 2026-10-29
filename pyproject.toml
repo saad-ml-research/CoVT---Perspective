@@ -1,0 +1,8 @@
+[project]
+name = "covt-persp"
+version = "0.1.0"
+description = "Text vs. visual-text reasoning: CoVT on MMPerspective and VERIFY"
+requires-python = ">=3.10"
+
+[tool.setuptools.packages.find]
+where = ["src"]
