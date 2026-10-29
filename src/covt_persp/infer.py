@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import time
 from pathlib import Path
 
@@ -24,9 +25,10 @@ from tqdm import tqdm
 from .prompts import CONDITIONS, build_prompt
 from .score import extract_letter
 
-# CoVT's VLMEvalKit config uses these pixel bounds for every model.
+# CoVT's VLMEvalKit config uses these pixel bounds for every model. Override with
+# COVT_MAX_PIXELS only if you must (e.g. no flash-attn); note it in results if so.
 MIN_PIXELS = 1280 * 28 * 28
-MAX_PIXELS = 16384 * 28 * 28
+MAX_PIXELS = int(os.environ.get("COVT_MAX_PIXELS", 16384 * 28 * 28))
 
 
 def load_model(model_path: str):

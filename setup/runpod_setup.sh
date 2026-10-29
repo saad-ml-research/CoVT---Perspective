@@ -38,8 +38,8 @@ pip install torch==2.5.1 torchvision==0.20.1 --index-url https://download.pytorc
 pip install transformers==4.50.1 accelerate==1.3.0 qwen-vl-utils pandas pyarrow \
             datasets scikit-learn tqdm pillow "huggingface_hub[cli]"
 pip install -e "$THIRD/CoVT/VLMEvalKit"
-# flash-attn is optional (code falls back to sdpa); it can take a while to build.
-pip install flash-attn==2.7.4.post1 --no-build-isolation || echo "!! flash-attn failed; will use sdpa"
+# flash-attn: prebuilt wheel. Needed to avoid vision-encoder OOM at CoVT's max_pixels.
+bash "$REPO_DIR/setup/install_flash_attn.sh" || echo "!! flash-attn wheel failed; large images may OOM (sdpa fallback)"
 
 # 3. This repo as a package.
 pip install -e "$REPO_DIR"
