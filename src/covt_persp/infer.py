@@ -73,12 +73,29 @@ def main() -> None:
     ap.add_argument("--data", required=True, type=Path)
     ap.add_argument("--condition", required=True, choices=sorted(CONDITIONS))
     ap.add_argument("--out", required=True, type=Path)
-    ap.add_argument("--limit", type=int, default=None, help="first N rows only (smoke test)")
+    ap.add_argument("--limit", type=int, default=None, help="first N rows only")
+    ap.add_argument("--per-task", type=int, default=None, help="first N rows of each task (smoke test)")
+    ap.add_argument("--tasks", nargs="+", default=None, help="only these task codes")
+    ap.add_argument("--exclude-tasks", nargs="+", default=None, help="skip these task codes")
     ap.add_argument("--max-new-tokens", type=int, default=None)
     args = ap.parse_args()
 
-    max_new = args.max_new_tokens or (64 if args.condition == "direct" else 1024)
+    # CoVT writes ~50 tokens of visual thoughts before <answer>, even in direct mode.
+    max_new = args.max_new_tokens or (256 if args.condition == "direct" else 1024)
     rows = [json.loads(l) for l in args.data.read_text().splitlines() if l.strip()]
+    if args.tasks:
+        rows = [r for r in rows if r.get("task") in set(args.tasks)]
+    if args.exclude_tasks:
+        rows = [r for r in rows if r.get("task") not in set(args.exclude_tasks)]
+    if args.per_task:
+        seen: dict[str, int] = {}
+        keep = []
+        for r in rows:
+            t = r.get("task")
+            if seen.get(t, 0) < args.per_task:
+                keep.append(r)
+                seen[t] = seen.get(t, 0) + 1
+        rows = keep
     if args.limit:
         rows = rows[: args.limit]
 
@@ -105,6 +122,7 @@ def main() -> None:
                 "output": clean, "output_raw": raw,
                 "model": args.model, "condition": args.condition,
                 "n_new_tokens": len(processor.tokenizer(raw).input_ids),
+                "truncated": len(processor.tokenizer(raw).input_ids) >= max_new,
                 "seconds": round(time.time() - t0, 2),
             }
             f.write(json.dumps(rec, ensure_ascii=False) + "\n")
