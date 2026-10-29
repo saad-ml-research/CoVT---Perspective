@@ -29,3 +29,11 @@ def test_custom_letters():
 def test_ci_bounds():
     lo, hi = bootstrap_ci([1, 0] * 100)
     assert 0.4 < lo < 0.5 < hi < 0.6
+
+
+def test_placeholder_options_prompt():
+    from covt_persp.prompts import build_prompt
+    p = build_prompt("Fill the ?", {"A": "a", "B": "b", "C": "c", "D": "d"}, "direct")
+    assert "shown in the image" in p and "A. a" not in p
+    p2 = build_prompt("Which line?", {"A": "Line A", "B": "Line B"}, "direct")
+    assert "A. Line A" in p2

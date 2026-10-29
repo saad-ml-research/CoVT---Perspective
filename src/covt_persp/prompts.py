@@ -18,9 +18,17 @@ CONDITIONS = {
 }
 
 
+def options_are_placeholders(options: dict[str, str]) -> bool:
+    """True when option texts are just their own labels (e.g. VERIFY: {"A": "a", ...}),
+    meaning the real choices are drawn in the image."""
+    return all(str(v).strip().strip("().").lower() == k.lower() for k, v in options.items())
+
+
 def format_question(question: str, options: dict[str, str] | None) -> str:
     text = f"Question: {question.strip()}\n"
-    if options:
+    if options and options_are_placeholders(options):
+        text += f"The options {', '.join(options)} are shown in the image.\n"
+    elif options:
         text += "Options:\n" + "".join(f"{k}. {v}\n" for k, v in options.items())
     return text
 
