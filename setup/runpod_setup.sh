@@ -30,6 +30,8 @@ fi
 git -C "$THIRD/CoVT" fetch --depth 1 origin "$UPSTREAM_COMMIT" || true
 git -C "$THIRD/CoVT" checkout -q "$UPSTREAM_COMMIT" || echo "!! could not pin upstream commit; using current HEAD"
 
+python "$REPO_DIR/setup/patch_upstream.py"   # sdpa fallback when flash-attn is absent
+
 # 2. Python deps. Versions match CoVT's training requirements.
 python -m pip install --upgrade pip
 pip install torch==2.5.1 torchvision==0.20.1 --index-url https://download.pytorch.org/whl/cu124
