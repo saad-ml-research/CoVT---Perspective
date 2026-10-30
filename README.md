@@ -64,7 +64,23 @@ Accuracy (%), with the paired difference from Qwen2.5-VL-7B in parentheses. * = 
 
 ### MMPerspective: prompt sensitivity
 
-*direct* = our format (options listed, answer letter in `<answer>` tags). *native* = the benchmark's own `prompt` string, verbatim.
+Same image, question and options; only the wording around them changes.
+
+**direct** (our format):
+```
+Question: Which line highlighted in the image is the Horizon Line?
+Options:
+A. Line A
+B. Line B
+C. Line C
+D. Line D
+Answer with the option letter only. Put the letter inside <answer></answer>.
+```
+
+**native** (the benchmark's own `prompt` field, verbatim; free-text answer, letter extracted afterwards):
+```
+Which line highlighted in the image is the Horizon Line? Select from the following choices. (A) Line A (B) Line B (C) Line C (D) Line D
+```
 
 | Task | Qwen direct | Qwen native | CoVT-sdd direct | CoVT-sdd native | Δ direct | Δ native |
 |---|---|---|---|---|---|---|
@@ -80,3 +96,20 @@ Accuracy (%), with the paired difference from Qwen2.5-VL-7B in parentheses. * = 
 | **All** | **40.2** | **39.4** | **34.9** | **38.6** | **−5.3*** | **−0.8** |
 
 Prediction agreement between Qwen and CoVT-sdd: 80.5% (direct), 59.1% (native).
+
+### MMPerspective: effects that hold under both prompts
+
+CoVT-sdd − Qwen2.5-VL-7B (paired). * = p < 0.05.
+
+| Task | Δ direct | Δ native | Consistent? |
+|---|---|---|---|
+| PTR | −11.1* | −2.6* | worse under both |
+| LRR | −8.6* | −11.3 (p = 0.06) | worse under both |
+| PTS | −6.1 (p = 0.05) | −6.1 | worse under both (n.s.) |
+| VAP | +0.6 | −0.6 | no effect under either |
+| VPC | 0.0 | +6.1 | no effect under either |
+| LDP | −0.4 | +16.8* | prompt-dependent |
+| CLP | −3.3 | −11.4* | prompt-dependent |
+| VPP | −6.4* | +1.9 | prompt-dependent |
+| OVR | −1.6 | −4.2 | no significant effect |
+| **All** | **−5.3*** | **−0.8** | prompt-dependent |
