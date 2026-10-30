@@ -37,3 +37,10 @@ def test_placeholder_options_prompt():
     assert "shown in the image" in p and "A. a" not in p
     p2 = build_prompt("Which line?", {"A": "Line A", "B": "Line B"}, "direct")
     assert "A. Line A" in p2
+
+
+def test_mcnemar():
+    from covt_persp.score import mcnemar_p
+    assert mcnemar_p(0, 0) == 1.0
+    assert abs(mcnemar_p(5, 5) - 1.0) < 1e-9
+    assert mcnemar_p(0, 10) < 0.01

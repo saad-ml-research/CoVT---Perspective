@@ -76,6 +76,46 @@ def agreement(a: Path, b: Path) -> float:
     return sum(pa[i] == pb[i] for i in shared) / max(len(shared), 1)
 
 
+def _correct_by_id(path: Path) -> dict[str, tuple[str, int]]:
+    out = {}
+    for l in path.read_text().splitlines():
+        if l.strip():
+            r = json.loads(l)
+            ok = r["pred"] is not None and str(r["pred"]).upper() == str(r["answer"]).strip().upper()
+            out[r["id"]] = (r.get("task") or "all", int(ok))
+    return out
+
+
+def mcnemar_p(b: int, c: int) -> float:
+    """Exact two-sided McNemar (binomial sign test on discordant pairs)."""
+    from math import comb
+    n, k = b + c, min(b, c)
+    if n == 0:
+        return 1.0
+    return min(1.0, 2 * sum(comb(n, i) for i in range(k + 1)) / 2 ** n)
+
+
+def paired(a: Path, b: Path, n_boot: int = 2000, seed: int = 0) -> dict[str, dict]:
+    """Per task: accuracy difference (b - a), paired bootstrap 95% CI, McNemar p."""
+    ca, cb = _correct_by_id(a), _correct_by_id(b)
+    groups: dict[str, list[tuple[int, int]]] = defaultdict(list)
+    for i in ca.keys() & cb.keys():
+        pair = (ca[i][1], cb[i][1])
+        groups[ca[i][0]].append(pair)
+        groups["ALL"].append(pair)
+    rng = random.Random(seed)
+    out = {}
+    for task, ps in sorted(groups.items()):
+        n = len(ps)
+        diff = sum(y - x for x, y in ps) / n
+        boots = sorted(sum(y - x for x, y in rng.choices(ps, k=n)) / n for _ in range(n_boot))
+        only_a = sum(x and not y for x, y in ps)
+        only_b = sum(y and not x for x, y in ps)
+        out[task] = {"n": n, "diff": diff, "ci95": (boots[int(0.025 * n_boot)], boots[int(0.975 * n_boot) - 1]),
+                     "only_a": only_a, "only_b": only_b, "p": mcnemar_p(only_a, only_b)}
+    return out
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("files", nargs="+", type=Path)
@@ -90,7 +130,15 @@ def main() -> None:
             print(f"  {task:6s} {v['n']:5d}  {100 * v['acc']:5.1f}  [{100 * lo:4.1f}, {100 * hi:4.1f}]"
                   f"  {100 * v['majority']:8.1f}  {v['top_pred']:>3s} {100 * v['top_pred_share']:4.0f}%{flag}")
     if len(args.files) == 2:
-        print(f"\nprediction agreement between the two runs: {100 * agreement(*args.files):.1f}%")
+        a, b = args.files
+        print(f"\nprediction agreement between the two runs: {100 * agreement(a, b):.1f}%")
+        print(f"\n== paired: {b.stem} minus {a.stem}")
+        print(f"  {'task':6s} {'n':>5s}  {'diff':>6s}  {'95% CI':>15s}  {'only A':>6s}  {'only B':>6s}  {'McNemar p':>9s}")
+        for task, v in paired(a, b).items():
+            lo, hi = v["ci95"]
+            star = "  *" if v["p"] < 0.05 else ""
+            print(f"  {task:6s} {v['n']:5d}  {100 * v['diff']:+6.1f}  [{100 * lo:+5.1f}, {100 * hi:+5.1f}]"
+                  f"  {v['only_a']:6d}  {v['only_b']:6d}  {v['p']:9.4f}{star}")
 
 
 if __name__ == "__main__":
