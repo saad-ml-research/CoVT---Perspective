@@ -41,11 +41,23 @@ def bootstrap_ci(correct: list[int], n_boot: int = 2000, seed: int = 0) -> tuple
     return means[int(0.025 * n_boot)], means[int(0.975 * n_boot) - 1]
 
 
+def load_rows(path: Path) -> list[dict]:
+    """Rows of a results file, first occurrence per id (guards against duplicate runs)."""
+    seen, rows = set(), []
+    for l in path.read_text().splitlines():
+        if l.strip():
+            r = json.loads(l)
+            if r["id"] not in seen:
+                seen.add(r["id"])
+                rows.append(r)
+    return rows
+
+
 def summarize(path: Path) -> dict:
     """Per task: accuracy with CI, majority-class baseline (always answering the most
     common correct letter), and the model's top-prediction share (1.0 = it always
     gives the same letter, i.e. collapsed onto one option)."""
-    rows = [json.loads(l) for l in path.read_text().splitlines() if l.strip()]
+    rows = load_rows(path)
     groups: dict[str, list[dict]] = defaultdict(list)
     for r in rows:
         groups[r.get("task") or "all"].append(r)
