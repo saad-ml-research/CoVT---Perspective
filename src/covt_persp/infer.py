@@ -119,7 +119,12 @@ def main() -> None:
     with args.out.open("a") as f:
         for r in tqdm(todo):
             images = [p if Path(p).is_absolute() else str(data_root / p) for p in r["images"]]
-            prompt = build_prompt(r["question"], r.get("options"), args.condition)
+            if args.condition == "native":
+                prompt = (r.get("meta") or {}).get("prompt")
+                if not prompt:
+                    raise SystemExit(f"row {r['id']} has no meta.prompt; 'native' needs the benchmark's own prompt")
+            else:
+                prompt = build_prompt(r["question"], r.get("options"), args.condition)
             t0 = time.time()
             clean, raw = generate(model, processor, images, prompt, max_new)
             rec = {

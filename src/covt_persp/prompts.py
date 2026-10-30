@@ -11,6 +11,9 @@ CONDITIONS = {
     "direct": "Answer with the option letter only. " + ANSWER_FORMAT,
     # Text chain-of-thought. On a CoVT checkpoint this becomes "visual + text":
     # the model emits its visual tokens, then writes the reasoning.
+    # The benchmark's own prompt string, verbatim (MMPerspective's `prompt` field);
+    # infer.py substitutes it, so this suffix is empty.
+    "native": "",
     "text_cot": (
         "Think step by step. First describe the visual elements that matter, "
         "then the pattern or rule they follow, then deduce the answer. " + ANSWER_FORMAT
