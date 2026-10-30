@@ -4,7 +4,7 @@
 #   bash scripts/repro_cvbench.sh                       # CoVT main model
 #   bash scripts/repro_cvbench.sh Qwen2.5-VL-7B-Instruct
 set -euo pipefail
-export HF_HOME=${HF_HOME:-/workspace/hf_cache}
+export HF_HOME=${HF_HOME:-/workspace/.cache/huggingface}
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 DATA=${DATA:-"CV-Bench-2D CV-Bench-3D"}
 REPO_DIR=$(cd "$(dirname "$0")/.." && pwd)

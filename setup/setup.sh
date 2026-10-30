@@ -9,13 +9,13 @@ REPO_DIR=$(cd "$(dirname "$0")/.." && pwd)
 THIRD=$REPO_DIR/third_party
 UPSTREAM_COMMIT=c3497a325b0fdda4d91ade456a01b0e325ee3150   # Wakals/CoVT, pinned
 
-export HF_HOME=$WS/hf_cache
+export HF_HOME=$WS/.cache/huggingface
 export PIP_CACHE_DIR=$WS/pip_cache
 mkdir -p "$HF_HOME" "$PIP_CACHE_DIR" "$THIRD"
 
 # Persist env vars for new shells.
-grep -q "HF_HOME=$WS/hf_cache" ~/.bashrc 2>/dev/null || {
-  echo "export HF_HOME=$WS/hf_cache" >> ~/.bashrc
+grep -q "HF_HOME=$WS/.cache/huggingface" ~/.bashrc 2>/dev/null || {
+  echo "export HF_HOME=$WS/.cache/huggingface" >> ~/.bashrc
   echo "export PIP_CACHE_DIR=$WS/pip_cache" >> ~/.bashrc
 }
 

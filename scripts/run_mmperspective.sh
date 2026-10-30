@@ -3,7 +3,7 @@
 #   bash scripts/run_mmperspective.sh smoke     # 5 questions per task, quick check
 #   bash scripts/run_mmperspective.sh           # full run (perception + reasoning tasks)
 set -euo pipefail
-export HF_HOME=${HF_HOME:-/workspace/hf_cache}
+export HF_HOME=${HF_HOME:-/workspace/.cache/huggingface}
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 REPO_DIR=$(cd "$(dirname "$0")/.." && pwd)
 DATA=${DATA:-$REPO_DIR/data/mmperspective.jsonl}
