@@ -8,14 +8,15 @@ export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 REPO_DIR=$(cd "$(dirname "$0")/.." && pwd)
 DATA=${DATA:-$REPO_DIR/data/mmperspective.jsonl}
 MODE=${1:-full}
-OUT=${OUT:-/workspace/results/mmp/$MODE}
+DNAME=$(basename "${DATA%.jsonl}"); [ "$DNAME" = mmperspective ] && DNAME=mmp     # keep existing results path
+OUT=${OUT:-/workspace/results/$DNAME/$MODE}
 MODELS=${MODELS:-"Qwen/Qwen2.5-VL-7B-Instruct Wakals/CoVT-7B-seg_depth_dino"}
 CONDITIONS=${CONDITIONS:-"direct"}
 THOUGHTS=${THOUGHTS:-auto}               # CoVT: auto | off | on
 TASKS=${TASKS:-}                         # e.g. TASKS="PTR LDP"; empty = all
 SUFFIX=${SUFFIX:-}                       # appended to output names, e.g. _minpixdefault
 
-EXTRA=(--exclude-tasks PRB --thoughts "$THOUGHTS")   # robustness scored separately (consistency)
+EXTRA=(--thoughts "$THOUGHTS"); [ "${DATA##*/}" = mmperspective.jsonl ] && EXTRA+=(--exclude-tasks PRB)   # robustness scored separately (consistency)
 [ -n "$TASKS" ] && EXTRA+=(--tasks $TASKS)
 [ "$MODE" = smoke ] && EXTRA+=(--per-task 5)
 
