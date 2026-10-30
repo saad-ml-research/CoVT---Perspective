@@ -27,8 +27,14 @@ from .score import extract_letter
 
 # CoVT's VLMEvalKit config uses these pixel bounds for every model. Override with
 # COVT_MAX_PIXELS only if you must (e.g. no flash-attn); note it in results if so.
-MIN_PIXELS = 1280 * 28 * 28
+# COVT_MIN_PIXELS=default uses Qwen's own minimum (no upscaling of small images).
+_min = os.environ.get("COVT_MIN_PIXELS", str(1280 * 28 * 28))
+MIN_PIXELS = 4 * 28 * 28 if _min == "default" else int(_min)
 MAX_PIXELS = int(os.environ.get("COVT_MAX_PIXELS", 16384 * 28 * 28))
+
+# Pre-filled start of the assistant reply, to control CoVT's visual thinking.
+#   off: skip the thought block and answer directly; on: always open a thought block.
+THOUGHT_PREFILL = {"auto": "", "off": "<think></think><answer>", "on": "<think>"}
 
 
 def load_model(model_path: str):
@@ -48,7 +54,8 @@ def load_model(model_path: str):
 
 
 @torch.inference_mode()
-def generate(model, processor, images: list[str], prompt: str, max_new_tokens: int) -> tuple[str, str]:
+def generate(model, processor, images: list[str], prompt: str, max_new_tokens: int,
+             prefill: str = "") -> tuple[str, str]:
     from qwen_vl_utils import process_vision_info
 
     content = [{"type": "image", "image": str(p), "min_pixels": MIN_PIXELS, "max_pixels": MAX_PIXELS}
@@ -56,14 +63,14 @@ def generate(model, processor, images: list[str], prompt: str, max_new_tokens: i
     content.append({"type": "text", "text": prompt})
     messages = [{"role": "user", "content": content}]
 
-    text = processor.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+    text = processor.apply_chat_template(messages, tokenize=False, add_generation_prompt=True) + prefill
     image_inputs, video_inputs = process_vision_info(messages)
     inputs = processor(text=[text], images=image_inputs, videos=video_inputs,
                        padding=True, return_tensors="pt").to(model.device)
     out = model.generate(**inputs, max_new_tokens=max_new_tokens, do_sample=False)
     new = out[0, inputs.input_ids.shape[1]:]
-    clean = processor.decode(new, skip_special_tokens=True)
-    raw = processor.decode(new, skip_special_tokens=False)
+    clean = prefill + processor.decode(new, skip_special_tokens=True)
+    raw = prefill + processor.decode(new, skip_special_tokens=False)
     return clean, raw
 
 
@@ -78,6 +85,8 @@ def main() -> None:
     ap.add_argument("--tasks", nargs="+", default=None, help="only these task codes")
     ap.add_argument("--exclude-tasks", nargs="+", default=None, help="skip these task codes")
     ap.add_argument("--max-new-tokens", type=int, default=None)
+    ap.add_argument("--thoughts", choices=sorted(THOUGHT_PREFILL), default="auto",
+                    help="CoVT only: auto = model decides; off = skip visual thoughts; on = force a thought block")
     args = ap.parse_args()
 
     # CoVT writes ~50 tokens of visual thoughts before <answer>, even in direct mode.
@@ -126,12 +135,13 @@ def main() -> None:
             else:
                 prompt = build_prompt(r["question"], r.get("options"), args.condition)
             t0 = time.time()
-            clean, raw = generate(model, processor, images, prompt, max_new)
+            clean, raw = generate(model, processor, images, prompt, max_new, THOUGHT_PREFILL[args.thoughts])
             rec = {
                 "id": r["id"], "task": r.get("task"), "answer": r.get("answer"),
                 "pred": extract_letter(clean, list((r.get("options") or {}).keys())),
                 "output": clean, "output_raw": raw,
-                "model": args.model, "condition": args.condition,
+                "model": args.model, "condition": args.condition, "thoughts": args.thoughts,
+                "min_pixels": MIN_PIXELS,
                 "n_new_tokens": len(processor.tokenizer(raw).input_ids),
                 "truncated": len(processor.tokenizer(raw).input_ids) >= max_new,
                 "seconds": round(time.time() - t0, 2),

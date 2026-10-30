@@ -11,10 +11,13 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 from collections import defaultdict
 from pathlib import Path
 
-PADS = {"sam": "<|sam_pad|>", "depth": "<|depth_pad|>", "dino": "<|dino_pad|>", "edge": "<|edge_pad|>"}
+# Any <|xxx_pad|> token in the generated text, except Qwen's own image/video placeholders.
+PAD_RE = re.compile(r"<\|(\w+?)_pad\|>")
+QWEN_PADS = {"image", "video", "vision"}
 
 
 def correct(r: dict) -> int:
@@ -28,9 +31,10 @@ def analyze(path: Path) -> dict[str, dict]:
             continue
         r = json.loads(line)
         raw = r.get("output_raw") or r.get("output") or ""
-        r["_experts"] = [k for k, tok in PADS.items() if tok in raw]
+        r["_experts"] = sorted(set(PAD_RE.findall(raw)) - QWEN_PADS)
         groups[r.get("task") or "all"].append(r)
         groups["ALL"].append(r)
+    names = sorted({e for r in groups["ALL"] for e in r["_experts"]})
     out = {}
     for task, rs in sorted(groups.items()):
         w = [r for r in rs if r["_experts"]]
@@ -41,7 +45,7 @@ def analyze(path: Path) -> dict[str, dict]:
             "acc_with": sum(map(correct, w)) / len(w) if w else None,
             "acc_without": sum(map(correct, wo)) / len(wo) if wo else None,
             "n_with": len(w), "n_without": len(wo),
-            "experts": {k: sum(k in r["_experts"] for r in rs) / len(rs) for k in PADS},
+            "experts": {k: sum(k in r["_experts"] for r in rs) / len(rs) for k in names},
         }
     return out
 
@@ -53,7 +57,7 @@ def main() -> None:
     fmt = lambda x: "  -- " if x is None else f"{100 * x:5.1f}"
     for p in args.files:
         s = analyze(p)
-        used = [k for k in PADS if s["ALL"]["experts"][k] > 0]
+        used = list(s["ALL"]["experts"])
         print(f"\n== {p.name}")
         print(f"  {'task':6s} {'n':>5s}  {'thinks':>6s}  {'acc w/':>6s} {'(n)':>5s}  {'acc w/o':>7s} {'(n)':>5s}  "
               + "  ".join(f"{k:>5s}" for k in used))
