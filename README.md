@@ -113,3 +113,28 @@ CoVT-sdd − Qwen2.5-VL-7B (paired). * = p < 0.05.
 | VPP | −6.4* | +1.9 | prompt-dependent |
 | OVR | −1.6 | −4.2 | no significant effect |
 | **All** | **−5.3*** | **−0.8** | prompt-dependent |
+
+### MMPerspective: switching CoVT's visual thoughts off and on
+
+Same model (CoVT-7B-seg_depth_dino), same questions. *auto* = the model decides whether to emit visual-thought tokens; *off* = reply pre-filled with an empty thought block (`<think></think><answer>`); *on* = reply pre-filled with `<think>`, so every answer goes through visual thoughts. Accuracy (%); * = paired difference from *auto* significant at p < 0.05 (exact McNemar).
+
+| Task | Qwen direct | auto | off | on | Qwen native | auto | off | on |
+|---|---|---|---|---|---|---|---|---|
+| VPP | 38.5 | 32.1 | 31.5 | 32.7 | 34.6 | 36.5 | 36.5 | 35.9 |
+| CLP | 21.1 | 17.9 | 22.0 | 20.3 | 35.8 | 24.4 | 26.0 | 24.4 |
+| VAP | 68.5 | 69.1 | 67.9 | 68.5 | 69.8 | 69.1 | 67.2 | 68.5 |
+| LDP | 68.8 | 68.4 | 50.9* | 64.9* | 60.0 | 76.8 | 77.5 | 77.9 |
+| PTR | 24.1 | 13.0 | 21.1* | 13.4 | 26.2 | 23.6 | 23.9 | 24.4 |
+| LRR | 45.0 | 36.4 | 32.4 | 36.4 | 46.4 | 35.1 | 35.8 | 35.8 |
+| OVR | 44.2 | 42.5 | 29.2* | 41.2 | 36.0 | 31.8 | 33.7 | 32.8 |
+| PTS | 26.3 | 20.2 | 25.4 | 19.7 | 31.5 | 25.4 | 28.7 | 27.2 |
+| VPC | 45.6 | 45.6 | 45.6 | 45.6 | 39.5 | 45.6 | 43.8 | 45.6 |
+| **All** | **40.2** | **34.9** | **33.2** | **34.4** | **39.4** | **38.6** | **39.3** | **39.3*** |
+
+Share of questions where CoVT emits visual thoughts under *auto*: 75.2% (direct), 82.0% (native).
+Questions whose correctness changes relative to *auto*: off 355 / 2118 (direct), 57 / 2118 (native); on 30 / 2118 (direct), 28 / 2118 (native).
+CoVT with thoughts *off* vs Qwen: −6.9* (direct), 0.0 (native; LDP +17.5*, CLP −9.8, LRR −10.6, PTR −2.3*).
+
+PTR at Qwen's default minimum resolution (no upscaling): Qwen 22.8 (direct), 25.1 (native), vs 24.1 / 26.2 with CoVT's setting. The gap to the paper's 42.4 is not explained by resolution.
+
+The edge expert's token is `<|pidinet_pad|>` (PiDiNet edge maps); CoVT-seg_depth_dino_edge emits it on 77% of questions (89% on PTR).
