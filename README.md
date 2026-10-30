@@ -44,3 +44,39 @@ Accuracy (%) with bootstrap 95% CI. Paper = Qwen2.5-VL-7B as reported in MMPersp
 Δ = CoVT − Qwen on the same questions; bold = significant at p < 0.05 (exact McNemar).
 
 ¹ Both models answer B on every VPC question. Prediction agreement between the two models: 80.5%.
+
+### MMPerspective: which visual expert? (direct prompt)
+
+Accuracy (%), with the paired difference from Qwen2.5-VL-7B in parentheses. * = significant at p < 0.05 (exact McNemar).
+
+| Task | Qwen2.5-VL-7B | CoVT seg | CoVT depth | CoVT seg+depth+dino | CoVT seg+depth+dino+edge |
+|---|---|---|---|---|---|
+| VPP | 38.5 | 27.6 (−10.9*) | 32.7 (−5.8*) | 32.1 (−6.4*) | 30.1 (−8.3*) |
+| CLP | 21.1 | 22.0 (+0.8) | 19.5 (−1.6) | 17.9 (−3.3) | 21.1 (0.0) |
+| VAP | 68.5 | 67.3 (−1.2) | 60.5 (−8.0*) | 69.1 (+0.6) | 69.1 (+0.6) |
+| LDP | 68.8 | 69.1 (+0.4) | 68.8 (0.0) | 68.4 (−0.4) | 68.8 (0.0) |
+| PTR | 24.1 | 14.2 (−9.9*) | 19.5 (−4.6*) | 13.0 (−11.1*) | 18.0 (−6.1*) |
+| LRR | 45.0 | 37.7 (−7.3*) | 35.1 (−9.9*) | 36.4 (−8.6*) | 42.4 (−2.6) |
+| OVR | 44.2 | 38.6 (−5.5*) | 37.3 (−6.8*) | 42.5 (−1.6) | 33.8 (−10.4*) |
+| PTS | 26.3 | 20.7 (−5.6*) | 25.4 (−0.9) | 20.2 (−6.1) | 27.7 (+1.4) |
+| VPC | 45.6 | 45.6 (0.0) | 45.6 (0.0) | 45.6 (0.0) | 45.6 (0.0) |
+| **All** | **40.2** | **34.7 (−5.5*)** | **35.9 (−4.2*)** | **34.9 (−5.3*)** | **36.3 (−3.9*)** |
+
+### MMPerspective: prompt sensitivity
+
+*direct* = our format (options listed, answer letter in `<answer>` tags). *native* = the benchmark's own `prompt` string, verbatim.
+
+| Task | Qwen direct | Qwen native | CoVT-sdd direct | CoVT-sdd native | Δ direct | Δ native |
+|---|---|---|---|---|---|---|
+| VPP | 38.5 | 34.6 | 32.1 | 36.5 | −6.4* | +1.9 |
+| CLP | 21.1 | 35.8 | 17.9 | 24.4 | −3.3 | −11.4* |
+| VAP | 68.5 | 69.8 | 69.1 | 69.1 | +0.6 | −0.6 |
+| LDP | 68.8 | 60.0 | 68.4 | 76.8 | −0.4 | **+16.8*** |
+| PTR | 24.1 | 26.2 | 13.0 | 23.6 | −11.1* | −2.6* |
+| LRR | 45.0 | 46.4 | 36.4 | 35.1 | −8.6* | −11.3 |
+| OVR | 44.2 | 36.0 | 42.5 | 31.8 | −1.6 | −4.2 |
+| PTS | 26.3 | 31.5 | 20.2 | 25.4 | −6.1 | −6.1 |
+| VPC | 45.6 | 39.5 | 45.6 | 45.6 | 0.0 | +6.1 |
+| **All** | **40.2** | **39.4** | **34.9** | **38.6** | **−5.3*** | **−0.8** |
+
+Prediction agreement between Qwen and CoVT-sdd: 80.5% (direct), 59.1% (native).
